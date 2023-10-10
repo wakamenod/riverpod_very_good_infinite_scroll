@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  very_good_infinite_list: ^0.7.1
 
 dev_dependencies:
   flutter_test:
