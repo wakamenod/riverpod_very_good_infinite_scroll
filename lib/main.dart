@@ -1,53 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:very_good_infinite_list/very_good_infinite_list.dart';
 
-void main() => runApp(const MaterialApp(home: MyApp()));
+part 'main.g.dart';
 
-class MyApp extends StatefulWidget {
+@riverpod
+class TodoList extends _$TodoList {
+  @override
+  Future<List<String>> build() async {
+    await Future.delayed(const Duration(seconds: 1));
+    return List.generate(10, (i) => 'ToDo Item $i');
+  }
+
+  Future<void> fetchTodo() async {
+    final previousState = await future;
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await Future.delayed(const Duration(seconds: 1));
+      return previousState +
+          List.generate(10, (i) => 'ToDo Item ${previousState.length + i}');
+    });
+  }
+}
+
+void main() => runApp(const ProviderScope(child: MyApp()));
+
+class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  _MyAppState createState() => _MyAppState();
-}
-
-class _MyAppState extends State<MyApp> {
-  var _items = <String>[];
-  var _isLoading = false;
-
-  void _fetchData() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _isLoading = false;
-      _items = List.generate(_items.length + 10, (i) => 'Item $i');
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Simple Example'),
-      ),
-      body: InfiniteList(
-        itemCount: _items.length,
-        isLoading: _isLoading,
-        onFetchData: _fetchData,
-        separatorBuilder: (context, index) => const Divider(),
-        itemBuilder: (context, index) {
-          return ListTile(
-            dense: true,
-            title: Text(_items[index]),
-          );
-        },
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: const Text('Simple Example'),
+        ),
+        body: Consumer(
+          builder: (BuildContext context, WidgetRef ref, Widget? child) {
+            final AsyncValue<List<String>> val = ref.watch(todoListProvider);
+
+            return InfiniteList(
+              itemCount: val.value?.length ?? 0,
+              isLoading: val.isLoading,
+              onFetchData: ref.read(todoListProvider.notifier).fetchTodo,
+              separatorBuilder: (context, index) => const Divider(),
+              itemBuilder: (context, index) {
+                return ListTile(
+                  dense: true,
+                  title: Text(val.value?[index] ?? ''),
+                );
+              },
+            );
+          },
+        ),
       ),
     );
   }
