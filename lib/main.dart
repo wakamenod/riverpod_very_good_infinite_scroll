@@ -19,6 +19,7 @@ class TodoList extends _$TodoList {
     state = const AsyncLoading();
     state = await AsyncValue.guard(() async {
       await Future.delayed(const Duration(seconds: 1));
+      if (previousState.length >= 30) throw 'Unknown Error!!!';
       return previousState +
           List.generate(10, (i) => 'ToDo Item ${previousState.length + i}');
     });
@@ -42,6 +43,27 @@ class MyApp extends StatelessWidget {
             final AsyncValue<List<String>> val = ref.watch(todoListProvider);
 
             return InfiniteList(
+              hasError: val.hasError,
+              errorBuilder: (context) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8.0),
+                      color: Colors.redAccent,
+                    ),
+                    child: Text(
+                      val.error.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16.0,
+                      ),
+                    ),
+                  ),
+                );
+              },
               itemCount: val.value?.length ?? 0,
               isLoading: val.isLoading,
               onFetchData: ref.read(todoListProvider.notifier).fetchTodo,
